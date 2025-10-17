@@ -96,136 +96,199 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-<script src="js/firebase.js"></script>
 
 <script>
-const loginDiv = document.getElementById("adminLogin");
-const painelDiv = document.getElementById("adminPainel");
+  // ====================================================
+  // 🔥 CONFIGURAÇÃO DO FIREBASE
+  // ====================================================
+  const firebaseConfig = {
+    apiKey: "AIzaSyBoAk9yyUMEBrCFabZcKglTLo8uNj9bVLs",
+    authDomain: "appaluguel-7095f.firebaseapp.com",
+    databaseURL: "https://appaluguel-7095f-default-rtdb.firebaseio.com",
+    projectId: "appaluguel-7095f",
+    storageBucket: "appaluguel-7095f.appspot.com",
+    messagingSenderId: "525901149755",
+    appId: "1:525901149755:web:bcb5d8786bc20d27cd0e1e"
+  };
+  firebase.initializeApp(firebaseConfig);
 
-// LOGIN ADMIN
-document.getElementById("btnAdminLogin").onclick = async () => {
-  const email = document.getElementById("adminEmail").value;
-  const senha = document.getElementById("adminSenha").value;
+  const auth = firebase.auth();
+  const db = firebase.database();
 
-  try {
-    await myAuth.loginAdmin(email, senha);
+  // ====================================================
+  // 🔐 FUNÇÕES DE AUTENTICAÇÃO
+  // ====================================================
+  const myAuth = {
+    loginAdmin: async (email, senha) => auth.signInWithEmailAndPassword(email, senha),
+    loginInquilino: async (cpf, senha) => {
+      const emailFake = `${cpf}@aluguelapp.com`;
+      return auth.signInWithEmailAndPassword(emailFake, senha);
+    },
+    criarInquilino: async (dados) => {
+      const emailFake = `${dados.cpf}@aluguelapp.com`;
+      const userCredential = await auth.createUserWithEmailAndPassword(emailFake, dados.senha);
+      const uid = userCredential.user.uid;
+      await db.ref("inquilinos/" + dados.cpf).set({
+        nome: dados.nome,
+        endereco: dados.endereco,
+        aluguel: dados.aluguel,
+        agua: dados.agua,
+        uid: uid
+      });
+      return userCredential;
+    },
+    logout: async () => {
+      await auth.signOut();
+      localStorage.clear();
+    }
+  };
 
-    // Espera o currentUser estar definido
-    const user = firebase.auth().currentUser;
-    if (!user) throw new Error("Usuário não logado ainda");
+  // ====================================================
+  // 📊 FUNÇÕES DE BANCO
+  // ====================================================
+  const myDB = {
+    getInquilino: async (cpf) => {
+      const snap = await db.ref("inquilinos/" + cpf).once("value");
+      return snap.val();
+    },
+    getTodosInquilinos: async () => {
+      const snap = await db.ref("inquilinos").once("value");
+      return snap.val();
+    },
+    solicitarPagamento: async (cpf, mes, valor, metodo) => {
+      return db.ref(`inquilinos/${cpf}/pagamentos/${mes}`).set({
+        valor,
+        forma: metodo,
+        status: "pendente",
+        dataSolicitacao: new Date().toLocaleString("pt-BR")
+      });
+    },
+    atualizarStatusPagamento: async (cpf, mes, status) => {
+      await db.ref(`inquilinos/${cpf}/pagamentos/${mes}`).update({ status });
+    }
+  };
 
-    // Agora sim, acesso liberado
-    loginDiv.classList.add("d-none");
-    painelDiv.classList.remove("d-none");
+  // ====================================================
+  // 🔹 SCRIPT ADMIN
+  // ====================================================
+  const loginDiv = document.getElementById("adminLogin");
+  const painelDiv = document.getElementById("adminPainel");
 
-    carregarInquilinos();
-    carregarPagamentosPendentes();
-  } catch (e) {
-    alert("Erro ao entrar: " + e.message);
-  }
-};
+  // LOGIN ADMIN
+  document.getElementById("btnAdminLogin").onclick = async () => {
+    const email = document.getElementById("adminEmail").value;
+    const senha = document.getElementById("adminSenha").value;
 
-// LOGOUT
-document.getElementById("btnLogout").onclick = async () => {
-  await myAuth.logout();
-  painelDiv.classList.add("d-none");
-  loginDiv.classList.remove("d-none");
-};
+    try {
+      await myAuth.loginAdmin(email, senha);
+      loginDiv.classList.add("d-none");
+      painelDiv.classList.remove("d-none");
+      carregarInquilinos();
+      carregarPagamentosPendentes();
+    } catch (e) {
+      alert("Erro ao entrar: " + e.message);
+    }
+  };
 
-// CADASTRAR INQUILINO
-document.getElementById("btnCadastrar").onclick = async () => {
-  const nome = document.getElementById("nome").value;
-  const cpf = document.getElementById("cpf").value;
-  const endereco = document.getElementById("endereco").value;
-  const aluguel = parseFloat(document.getElementById("aluguel").value);
-  const agua = parseFloat(document.getElementById("agua").value);
-  const senha = document.getElementById("senha").value;
+  // LOGOUT
+  document.getElementById("btnLogout").onclick = async () => {
+    await myAuth.logout();
+    painelDiv.classList.add("d-none");
+    loginDiv.classList.remove("d-none");
+  };
 
-  if (!nome || !cpf || !endereco || !aluguel || !senha) {
-    alert("Preencha todos os campos obrigatórios!");
-    return;
-  }
+  // CADASTRAR INQUILINO
+  document.getElementById("btnCadastrar").onclick = async () => {
+    const nome = document.getElementById("nome").value;
+    const cpf = document.getElementById("cpf").value;
+    const endereco = document.getElementById("endereco").value;
+    const aluguel = parseFloat(document.getElementById("aluguel").value);
+    const agua = parseFloat(document.getElementById("agua").value);
+    const senha = document.getElementById("senha").value;
 
-  try {
-    await myAuth.criarInquilino({ nome, cpf, endereco, aluguel, agua, senha });
-    alert("Inquilino cadastrado com sucesso!");
-    carregarInquilinos();
-  } catch (e) {
-    alert("Erro ao cadastrar: " + e.message);
-  }
-};
-
-// LISTAR INQUILINOS
-async function carregarInquilinos() {
-  const lista = document.getElementById("listaInquilinos");
-  lista.innerHTML = "<tr><td colspan='5'>Carregando...</td></tr>";
-  try {
-    const dados = await myDB.getTodosInquilinos();
-    if (!dados) {
-      lista.innerHTML = "<tr><td colspan='5'>Nenhum inquilino cadastrado</td></tr>";
+    if (!nome || !cpf || !endereco || !aluguel || !senha) {
+      alert("Preencha todos os campos obrigatórios!");
       return;
     }
-    lista.innerHTML = "";
-    Object.entries(dados).forEach(([cpf, info]) => {
-      lista.innerHTML += `
-        <tr>
-          <td>${info.nome}</td>
-          <td>${cpf}</td>
-          <td>${info.endereco}</td>
-          <td>R$ ${info.aluguel.toFixed(2)}</td>
-          <td>R$ ${info.agua.toFixed(2)}</td>
-        </tr>
-      `;
-    });
-  } catch (e) {
-    alert("Erro ao carregar inquilinos: " + e.message);
-  }
-}
 
-// LISTAR PAGAMENTOS PENDENTES
-async function carregarPagamentosPendentes() {
-  const lista = document.getElementById("listaPendentes");
-  lista.innerHTML = "<tr><td colspan='5'>Carregando...</td></tr>";
+    try {
+      await myAuth.criarInquilino({ nome, cpf, endereco, aluguel, agua, senha });
+      alert("Inquilino cadastrado com sucesso!");
+      carregarInquilinos();
+    } catch (e) {
+      alert("Erro ao cadastrar: " + e.message);
+    }
+  };
 
-  const dados = await myDB.getTodosInquilinos();
-  if (!dados) {
-    lista.innerHTML = "<tr><td colspan='5'>Nenhum pagamento pendente</td></tr>";
-    return;
-  }
-
-  lista.innerHTML = "";
-  for (const [cpf, info] of Object.entries(dados)) {
-    const pagamentos = info.pagamentos || {};
-    for (const [mes, pagamento] of Object.entries(pagamentos)) {
-      if (pagamento.status === "pendente") {
+  // LISTAR INQUILINOS
+  async function carregarInquilinos() {
+    const lista = document.getElementById("listaInquilinos");
+    lista.innerHTML = "<tr><td colspan='5'>Carregando...</td></tr>";
+    try {
+      const dados = await myDB.getTodosInquilinos();
+      if (!dados) {
+        lista.innerHTML = "<tr><td colspan='5'>Nenhum inquilino cadastrado</td></tr>";
+        return;
+      }
+      lista.innerHTML = "";
+      Object.entries(dados).forEach(([cpf, info]) => {
         lista.innerHTML += `
           <tr>
             <td>${info.nome}</td>
-            <td>${mes}</td>
-            <td>R$ ${parseFloat(pagamento.valor).toFixed(2)}</td>
-            <td>${pagamento.forma}</td>
-            <td>
-              <button class="btn btn-success btn-sm" onclick="aprovarPagamento('${cpf}','${mes}')">Aprovar</button>
-              <button class="btn btn-danger btn-sm" onclick="rejeitarPagamento('${cpf}','${mes}')">Rejeitar</button>
-            </td>
+            <td>${cpf}</td>
+            <td>${info.endereco}</td>
+            <td>R$ ${info.aluguel.toFixed(2)}</td>
+            <td>R$ ${info.agua.toFixed(2)}</td>
           </tr>
         `;
+      });
+    } catch (e) {
+      alert("Erro ao carregar inquilinos: " + e.message);
+    }
+  }
+
+  // LISTAR PAGAMENTOS PENDENTES
+  async function carregarPagamentosPendentes() {
+    const lista = document.getElementById("listaPendentes");
+    lista.innerHTML = "<tr><td colspan='5'>Carregando...</td></tr>";
+
+    const dados = await myDB.getTodosInquilinos();
+    if (!dados) {
+      lista.innerHTML = "<tr><td colspan='5'>Nenhum pagamento pendente</td></tr>";
+      return;
+    }
+
+    lista.innerHTML = "";
+    for (const [cpf, info] of Object.entries(dados)) {
+      const pagamentos = info.pagamentos || {};
+      for (const [mes, pagamento] of Object.entries(pagamentos)) {
+        if (pagamento.status === "pendente") {
+          lista.innerHTML += `
+            <tr>
+              <td>${info.nome}</td>
+              <td>${mes}</td>
+              <td>R$ ${parseFloat(pagamento.valor).toFixed(2)}</td>
+              <td>${pagamento.forma}</td>
+              <td>
+                <button class="btn btn-success btn-sm" onclick="aprovarPagamento('${cpf}','${mes}')">Aprovar</button>
+                <button class="btn btn-danger btn-sm" onclick="rejeitarPagamento('${cpf}','${mes}')">Rejeitar</button>
+              </td>
+            </tr>
+          `;
+        }
       }
     }
   }
-}
 
-// APROVAR PAGAMENTO
-async function aprovarPagamento(cpf, mes) {
-  await myDB.atualizarStatusPagamento(cpf, mes, "aprovado");
-  carregarPagamentosPendentes();
-}
+  async function aprovarPagamento(cpf, mes) {
+    await myDB.atualizarStatusPagamento(cpf, mes, "aprovado");
+    carregarPagamentosPendentes();
+  }
 
-// REJEITAR PAGAMENTO
-async function rejeitarPagamento(cpf, mes) {
-  await myDB.atualizarStatusPagamento(cpf, mes, "rejeitado");
-  carregarPagamentosPendentes();
-}
+  async function rejeitarPagamento(cpf, mes) {
+    await myDB.atualizarStatusPagamento(cpf, mes, "rejeitado");
+    carregarPagamentosPendentes();
+  }
 </script>
 
 </body>
