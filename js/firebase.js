@@ -4,13 +4,12 @@
 // (Configurações do Projeto → Suas apps → Firebase SDK snippet → Configuração)
 // ============================================================
 const firebaseConfig = {
-  apiKey: "SUA_API_KEY_AQUI",
-  authDomain: "SEU_PROJETO.firebaseapp.com",
-  databaseURL: "https://SEU_PROJETO-default-rtdb.firebaseio.com",
-  projectId: "SEU_PROJETO",
-  storageBucket: "SEU_PROJETO.appspot.com",
-  messagingSenderId: "XXXXXXXXXXXX",
-  appId: "1:XXXXXXXXXXXX:web:XXXXXXXXXXXXXX"
+  apiKey: "AIzaSyBoAk9yyUMEBrCFabZcKglTLo8uNj9bVLs",
+  authDomain: "appaluguel-7095f.firebaseapp.com",
+  projectId: "appaluguel-7095f",
+  storageBucket: "appaluguel-7095f.firebasestorage.app",
+  messagingSenderId: "525901149755",
+  appId: "1:525901149755:web:bcb5d8786bc20d27cd0e1e"
 };
 
 // Inicializa o Firebase
