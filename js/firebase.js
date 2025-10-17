@@ -6,6 +6,7 @@
 const firebaseConfig = {
   apiKey: "AIzaSyBoAk9yyUMEBrCFabZcKglTLo8uNj9bVLs",
   authDomain: "appaluguel-7095f.firebaseapp.com",
+  databaseURL: "https://appaluguel-7095f-default-rtdb.firebaseio.com",
   projectId: "appaluguel-7095f",
   storageBucket: "appaluguel-7095f.firebasestorage.app",
   messagingSenderId: "525901149755",
