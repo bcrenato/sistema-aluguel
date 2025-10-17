@@ -82,10 +82,10 @@
   <script src="js/firebase.js"></script>
 
   <script>
-    // ========== LOGIN DO ADMIN ==========
     const loginDiv = document.getElementById("adminLogin");
     const painelDiv = document.getElementById("adminPainel");
 
+    // ================= LOGIN =================
     document.getElementById("btnAdminLogin").onclick = async () => {
       const email = document.getElementById("adminEmail").value;
       const senha = document.getElementById("adminSenha").value;
@@ -100,14 +100,14 @@
       }
     };
 
-    // ========== LOGOUT ==========
+    // ================= LOGOUT =================
     document.getElementById("btnLogout").onclick = async () => {
       await myAuth.logout();
       painelDiv.classList.add("d-none");
       loginDiv.classList.remove("d-none");
     };
 
-    // ========== CADASTRAR INQUILINO ==========
+    // ================= CADASTRAR INQUILINO =================
     document.getElementById("btnCadastrar").onclick = async () => {
       const nome = document.getElementById("nome").value;
       const cpf = document.getElementById("cpf").value;
@@ -130,7 +130,7 @@
       }
     };
 
-    // ========== LISTAR INQUILINOS ==========
+    // ================= LISTAR INQUILINOS =================
     async function carregarInquilinos() {
       const lista = document.getElementById("listaInquilinos");
       lista.innerHTML = "<tr><td colspan='5'>Carregando...</td></tr>";
@@ -156,6 +156,15 @@
         alert("Erro ao carregar inquilinos: " + e.message);
       }
     }
+
+    // ================= VERIFICAR LOGIN EXISTENTE =================
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) {
+        loginDiv.classList.add("d-none");
+        painelDiv.classList.remove("d-none");
+        carregarInquilinos();
+      }
+    });
   </script>
 </body>
 </html>
