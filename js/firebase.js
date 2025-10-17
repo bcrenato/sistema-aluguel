@@ -94,3 +94,20 @@ const myDB = {
     return snap.val();
   }
 };
+
+
+
+async function solicitarPagamento(cpf, mes, valor, metodo) {
+  return db.ref("inquilinos/" + cpf + "/pagamentos/" + mes).set({
+    valor: valor,
+    forma: metodo,
+    status: "pendente",
+    dataSolicitacao: new Date().toLocaleString("pt-BR")
+  });
+}
+
+const myDB = {
+  getInquilino,
+  getTodosInquilinos,
+  solicitarPagamento
+};
