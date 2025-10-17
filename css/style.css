@@ -1,0 +1,22 @@
+/* css/style.css */
+body {
+  font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.card {
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.container h3, .container h4 {
+  color: #333;
+}
+
+.btn-outline-primary {
+  border-radius: 6px;
+}
+
+.list-group-item {
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
