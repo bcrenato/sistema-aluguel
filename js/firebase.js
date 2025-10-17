@@ -1,7 +1,6 @@
 // ============================================================
 // 🔥 CONFIGURAÇÃO DO FIREBASE
 // Substitua abaixo pelos dados do seu projeto no console Firebase
-// (Configurações do Projeto → Suas apps → Firebase SDK snippet → Configuração)
 // ============================================================
 const firebaseConfig = {
   apiKey: "AIzaSyBoAk9yyUMEBrCFabZcKglTLo8uNj9bVLs",
@@ -21,29 +20,21 @@ const auth = firebase.auth();
 const db = firebase.database();
 
 // ============================================================
-// 🔐 FUNÇÕES ÚTEIS DE AUTENTICAÇÃO E BANCO
+// 🔐 FUNÇÕES DE AUTENTICAÇÃO
 // ============================================================
-
-// Utilizado pelos demais scripts (auth.js, inquilino.js, admin.js)
 const myAuth = {
-  // -------------------------------
   // Login do inquilino (CPF + senha)
-  // -------------------------------
   loginInquilino: async (cpf, senha) => {
     const emailFake = `${cpf}@aluguelapp.com`;
     return auth.signInWithEmailAndPassword(emailFake, senha);
   },
 
-  // -------------------------------
   // Login do admin (email e senha reais)
-  // -------------------------------
   loginAdmin: async (email, senha) => {
     return auth.signInWithEmailAndPassword(email, senha);
   },
 
-  // -------------------------------
   // Cria um novo inquilino (usado pelo admin)
-  // -------------------------------
   criarInquilino: async (dados) => {
     const emailFake = `${dados.cpf}@aluguelapp.com`;
     const userCredential = await auth.createUserWithEmailAndPassword(emailFake, dados.senha);
@@ -57,9 +48,7 @@ const myAuth = {
     return userCredential;
   },
 
-  // -------------------------------
   // Deslogar usuário
-  // -------------------------------
   logout: async () => {
     await auth.signOut();
     localStorage.clear();
@@ -67,9 +56,8 @@ const myAuth = {
 };
 
 // ============================================================
-// 📊 FUNÇÕES AUXILIARES DE BANCO DE DADOS
+// 📊 FUNÇÕES DE BANCO DE DADOS
 // ============================================================
-
 const myDB = {
   // Obtém os dados de um inquilino
   getInquilino: async (cpf) => {
@@ -77,10 +65,16 @@ const myDB = {
     return snap.val();
   },
 
-  // Marca um pagamento manualmente
+  // Obtém todos os inquilinos (admin)
+  getTodosInquilinos: async () => {
+    const snap = await db.ref("inquilinos").once("value");
+    return snap.val();
+  },
+
+  // Registrar pagamento manual (admin)
   registrarPagamento: async (cpf, mes, valor, forma) => {
     const hoje = new Date();
-    const data = `${String(hoje.getDate()).padStart(2, '0')}/${String(hoje.getMonth() + 1).padStart(2, '0')}/${hoje.getFullYear()}`;
+    const data = `${String(hoje.getDate()).padStart(2,'0')}/${String(hoje.getMonth()+1).padStart(2,'0')}/${hoje.getFullYear()}`;
     await db.ref(`inquilinos/${cpf}/pagamentos/${mes}`).set({
       valor,
       forma,
@@ -88,26 +82,18 @@ const myDB = {
     });
   },
 
-  // Obtém todos os inquilinos (admin)
-  getTodosInquilinos: async () => {
-    const snap = await db.ref("inquilinos").once("value");
-    return snap.val();
+  // Solicitar pagamento (inquilino)
+  solicitarPagamento: async (cpf, mes, valor, metodo) => {
+    return db.ref("inquilinos/" + cpf + "/pagamentos/" + mes).set({
+      valor: valor,
+      forma: metodo,
+      status: "pendente",
+      dataSolicitacao: new Date().toLocaleString("pt-BR")
+    });
+  },
+
+  // Atualizar status de pagamento (admin aprovar/rejeitar)
+  atualizarStatusPagamento: async (cpf, mes, status) => {
+    return db.ref("inquilinos/" + cpf + "/pagamentos/" + mes).update({ status });
   }
-};
-
-
-
-async function solicitarPagamento(cpf, mes, valor, metodo) {
-  return db.ref("inquilinos/" + cpf + "/pagamentos/" + mes).set({
-    valor: valor,
-    forma: metodo,
-    status: "pendente",
-    dataSolicitacao: new Date().toLocaleString("pt-BR")
-  });
-}
-
-const myDB = {
-  getInquilino,
-  getTodosInquilinos,
-  solicitarPagamento
 };
