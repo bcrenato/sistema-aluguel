@@ -1,186 +1,224 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Painel do Inquilino</title>
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-    rel="stylesheet"
-  />
-  <link rel="stylesheet" href="css/style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard do Inquilino</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
-
 <body class="bg-light">
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container-fluid">
-      <span class="navbar-brand">AluguelApp</span>
-      <button id="btnLogout" class="btn btn-outline-light btn-sm">Sair</button>
+
+<div class="container py-5">
+  <!-- LOGIN INQUILINO -->
+  <div id="loginDiv" class="card shadow mx-auto p-4" style="max-width: 400px;">
+    <h4 class="text-center mb-3">Login do Inquilino</h4>
+    <input type="text" id="cpfInput" class="form-control mb-2" placeholder="CPF">
+    <input type="password" id="senhaInput" class="form-control mb-3" placeholder="Senha">
+    <button id="btnLogin" class="btn btn-primary w-100">Entrar</button>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboardDiv" class="d-none">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h3>Bem-vindo, <span id="nomeUsuario"></span></h3>
+      <button id="btnLogout" class="btn btn-outline-danger btn-sm">Sair</button>
     </div>
-  </nav>
 
-  <div class="container py-4">
-    <h3 class="mb-4">Bem-vindo(a)</h3>
-
-    <!-- DADOS DO INQUILINO -->
-    <div class="card mb-4 p-3 shadow-sm">
-      <h5>Dados da Casa</h5>
-      <ul class="list-group mt-2">
-        <li class="list-group-item">Nome: <span id="nome"></span></li>
-        <li class="list-group-item">Endereço: <span id="endereco"></span></li>
-        <li class="list-group-item">Aluguel: R$ <span id="aluguel"></span></li>
-        <li class="list-group-item">Água: R$ <span id="agua"></span></li>
-      </ul>
-      <div class="mt-3">
-        <button id="btnAbrirModal" class="btn btn-primary">Escolher forma de pagamento</button>
-      </div>
+    <!-- Botão Abrir Modal de Pagamento -->
+    <div class="mb-4">
+      <button id="btnAbrirModal" class="btn btn-success">Pagar Aluguel</button>
     </div>
 
     <!-- HISTÓRICO DE PAGAMENTOS -->
-    <div class="card p-3 shadow-sm">
+    <div class="card shadow-sm p-4">
       <h5>Histórico de Pagamentos</h5>
-      <ul id="listaPagamentos" class="list-group mt-2">
-        <li class="list-group-item">Carregando...</li>
-      </ul>
+      <table class="table table-bordered mt-3">
+        <thead>
+          <tr>
+            <th>Mês</th>
+            <th>Valor</th>
+            <th>Forma</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="historicoPagamentos"></tbody>
+      </table>
     </div>
-  </div>
 
-  <!-- MODAL DE PAGAMENTO -->
-  <div class="modal fade" id="modalPagamento" tabindex="-1" aria-labelledby="modalPagamentoLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="modalPagamentoLabel">Escolha a forma de pagamento</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+  </div>
+</div>
+
+<!-- MODAL DE PAGAMENTO -->
+<div class="modal fade" id="modalPagamento" tabindex="-1" aria-labelledby="modalPagamentoLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalPagamentoLabel">Escolha a forma de pagamento</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        <!-- BOTÕES DE OPÇÃO -->
+        <div class="d-flex gap-2 mb-3" id="opcoesPagamento">
+          <button id="btnPixModal" class="btn btn-success flex-fill">PIX: R$ <span id="valorPix"></span></button>
+          <button id="btnDinheiroModal" class="btn btn-secondary flex-fill">Dinheiro: R$ <span id="valorDinheiro"></span></button>
         </div>
-        <div class="modal-body">
-          <div class="d-flex gap-2 mb-3">
-            <button id="btnPixModal" class="btn btn-success flex-fill">PIX: R$ <span id="valorPix"></span></button>
-            <button id="btnDinheiroModal" class="btn btn-secondary flex-fill">Dinheiro: R$ <span id="valorDinheiro"></span></button>
-          </div>
-          <div id="mensagemMetodo" class="text-muted"></div>
+
+        <!-- QR CODE PIX -->
+        <div id="pixContainer" class="text-center mb-3" style="display:none;">
+          <div id="qrCode"></div>
+          <button id="btnCopiarPix" class="btn btn-outline-primary btn-sm mt-2">Copiar código PIX</button>
         </div>
-        <div class="modal-footer">
-          <button type="button" id="btnCancelarMetodo" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="button" id="btnConfirmarMetodo" class="btn btn-primary" disabled>Confirmar</button>
-        </div>
+
+        <div id="mensagemMetodo" class="text-muted"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btnCancelarMetodo" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" id="btnConfirmarMetodo" class="btn btn-primary" disabled>Confirmar</button>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- Firebase e scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-  <script src="js/firebase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="js/firebase.js"></script>
 
-  <script>
-    let cpfLogado = null;
-    let dadosInquilino = null;
+<script>
+let dadosInquilino = null;
+let cpfLogado = null;
 
-    const nomeEl = document.getElementById("nome");
-    const enderecoEl = document.getElementById("endereco");
-    const aluguelEl = document.getElementById("aluguel");
-    const aguaEl = document.getElementById("agua");
-    const listaPagamentos = document.getElementById("listaPagamentos");
+// LOGIN INQUILINO
+document.getElementById("btnLogin").onclick = async () => {
+  const cpf = document.getElementById("cpfInput").value;
+  const senha = document.getElementById("senhaInput").value;
+  const emailFake = `${cpf}@aluguelapp.com`;
 
-    // MODAL
-    const btnAbrirModal = document.getElementById("btnAbrirModal");
-    const btnPixModal = document.getElementById("btnPixModal");
-    const btnDinheiroModal = document.getElementById("btnDinheiroModal");
-    const btnConfirmarMetodo = document.getElementById("btnConfirmarMetodo");
-    const mensagemMetodo = document.getElementById("mensagemMetodo");
-    const valorPix = document.getElementById("valorPix");
-    const valorDinheiro = document.getElementById("valorDinheiro");
-    let metodoSelecionado = null;
-    const modalPagamento = new bootstrap.Modal(document.getElementById("modalPagamento"));
+  try {
+    await myAuth.loginInquilino(cpf, senha);
+    cpfLogado = cpf;
+    dadosInquilino = await myDB.getInquilino(cpf);
+    document.getElementById("nomeUsuario").textContent = dadosInquilino.nome;
+    document.getElementById("loginDiv").classList.add("d-none");
+    document.getElementById("dashboardDiv").classList.remove("d-none");
+    carregarHistorico();
+  } catch (e) {
+    alert("Erro ao entrar: " + e.message);
+  }
+};
 
-    // LOGOUT
-    document.getElementById("btnLogout").onclick = async () => {
-      await myAuth.logout();
-      window.location.href = "index.html";
-    };
+// LOGOUT
+document.getElementById("btnLogout").onclick = async () => {
+  await myAuth.logout();
+  document.getElementById("dashboardDiv").classList.add("d-none");
+  document.getElementById("loginDiv").classList.remove("d-none");
+};
 
-    // VERIFICAR LOGIN
-    firebase.auth().onAuthStateChanged(async (user) => {
-      if (!user) return window.location.href = "index.html";
-      cpfLogado = user.email.split("@")[0];
-      await carregarDados();
-    });
+// CARREGAR HISTÓRICO DE PAGAMENTOS
+async function carregarHistorico() {
+  const tbody = document.getElementById("historicoPagamentos");
+  tbody.innerHTML = "";
+  const pagamentos = dadosInquilino.pagamentos || {};
+  for (const [mes, info] of Object.entries(pagamentos)) {
+    tbody.innerHTML += `
+      <tr>
+        <td>${mes}</td>
+        <td>R$ ${parseFloat(info.valor).toFixed(2)}</td>
+        <td>${info.forma}</td>
+        <td>${info.status}</td>
+      </tr>
+    `;
+  }
+}
 
-    // CARREGAR DADOS
-    async function carregarDados() {
-      dadosInquilino = await myDB.getInquilino(cpfLogado);
-      if (!dadosInquilino) return alert("Dados não encontrados!");
-      nomeEl.textContent = dadosInquilino.nome;
-      enderecoEl.textContent = dadosInquilino.endereco;
-      aluguelEl.textContent = parseFloat(dadosInquilino.aluguel).toFixed(2);
-      aguaEl.textContent = parseFloat(dadosInquilino.agua || 0).toFixed(2);
-      valorPix.textContent = (parseFloat(dadosInquilino.aluguel) + parseFloat(dadosInquilino.agua || 0)).toFixed(2);
-      valorDinheiro.textContent = valorPix.textContent;
-      carregarPagamentos();
-    }
+// -----------------------------------------------
+// MODAL DE PAGAMENTO
+// -----------------------------------------------
+const btnAbrirModal = document.getElementById("btnAbrirModal");
+const btnPixModal = document.getElementById("btnPixModal");
+const btnDinheiroModal = document.getElementById("btnDinheiroModal");
+const btnConfirmarMetodo = document.getElementById("btnConfirmarMetodo");
+const mensagemMetodo = document.getElementById("mensagemMetodo");
+const pixContainer = document.getElementById("pixContainer");
+const qrCodeDiv = document.getElementById("qrCode");
+const btnCopiarPix = document.getElementById("btnCopiarPix");
+const valorPix = document.getElementById("valorPix");
+const valorDinheiro = document.getElementById("valorDinheiro");
 
-    // CARREGAR PAGAMENTOS
-    async function carregarPagamentos() {
-      listaPagamentos.innerHTML = "<li class='list-group-item'>Carregando...</li>";
-      const pagamentos = dadosInquilino.pagamentos || {};
-      listaPagamentos.innerHTML = "";
+let metodoSelecionado = null;
+const modalPagamento = new bootstrap.Modal(document.getElementById("modalPagamento"));
+const valorTotal = parseFloat(dadosInquilino?.aluguel || 0) + parseFloat(dadosInquilino?.agua || 0);
+valorPix.textContent = valorTotal.toFixed(2);
+valorDinheiro.textContent = valorTotal.toFixed(2);
 
-      if (Object.keys(pagamentos).length === 0) {
-        listaPagamentos.innerHTML = "<li class='list-group-item'>Nenhum pagamento registrado</li>";
-        return;
-      }
+// Função para gerar código PIX dinâmico
+function gerarPixCode(inquilino, valor) {
+  const hoje = new Date();
+  const mes = hoje.toLocaleString("pt-BR", { month: "long" });
+  const primeiroNome = inquilino.split(" ")[0];
+  const identificador = `AluguelJP${primeiroNome}${mes}`;
+  const pixCode = `00020126330014BR.GOV.BCB.PIX0111023198587845204000053039865802BR59${inquilino.length}${inquilino}6009Nilopolis62${identificador.length}${identificador}6304D211`;
+  return pixCode;
+}
 
-      Object.entries(pagamentos).forEach(([mes, info]) => {
-        listaPagamentos.innerHTML += `
-          <li class="list-group-item">
-            <strong>${mes}</strong> - R$ ${parseFloat(info.valor).toFixed(2)} - ${info.forma} - <em>${info.status}</em> (${info.dataSolicitacao})
-          </li>
-        `;
-      });
-    }
+// Abrir modal
+btnAbrirModal.onclick = () => {
+  metodoSelecionado = null;
+  btnConfirmarMetodo.disabled = true;
+  btnPixModal.disabled = false;
+  btnDinheiroModal.disabled = false;
+  btnPixModal.style.display = "inline-block";
+  btnDinheiroModal.style.display = "inline-block";
+  pixContainer.style.display = "none";
+  qrCodeDiv.innerHTML = "";
+  mensagemMetodo.textContent = "";
+  modalPagamento.show();
+};
 
-    // ABRIR MODAL
-    btnAbrirModal.onclick = () => {
-      metodoSelecionado = null;
-      btnConfirmarMetodo.disabled = true;
-      btnPixModal.disabled = false;
-      btnDinheiroModal.disabled = false;
-      mensagemMetodo.textContent = "";
-      modalPagamento.show();
-    };
+// Selecionar PIX
+btnPixModal.onclick = () => {
+  metodoSelecionado = "PIX";
+  btnPixModal.disabled = true;
+  btnDinheiroModal.style.display = "none";
+  btnConfirmarMetodo.disabled = false;
+  mensagemMetodo.textContent = "Você selecionou PIX. Confirme para enviar solicitação.";
+  pixContainer.style.display = "block";
+  qrCodeDiv.innerHTML = "";
 
-    // SELECIONAR METODO
-    btnPixModal.onclick = () => {
-      metodoSelecionado = "PIX";
-      btnPixModal.disabled = true;
-      btnDinheiroModal.disabled = false;
-      btnConfirmarMetodo.disabled = false;
-      mensagemMetodo.textContent = `Você selecionou PIX. Confirme para enviar solicitação.`;
-    };
+  const pixString = gerarPixCode(dadosInquilino.nome, valorTotal);
 
-    btnDinheiroModal.onclick = () => {
-      metodoSelecionado = "Dinheiro";
-      btnDinheiroModal.disabled = true;
-      btnPixModal.disabled = false;
-      btnConfirmarMetodo.disabled = false;
-      mensagemMetodo.textContent = `Você selecionou Dinheiro. Confirme para enviar solicitação.`;
-    };
+  new QRCode(qrCodeDiv, { text: pixString, width: 200, height: 200 });
 
-    // CONFIRMAR METODO
-    btnConfirmarMetodo.onclick = async () => {
-      if (!metodoSelecionado) return;
-      const mes = new Date().toLocaleString("pt-BR", { month: "long", year: "numeric" });
-      await myDB.solicitarPagamento(cpfLogado, mes,
-        parseFloat(dadosInquilino.aluguel) + parseFloat(dadosInquilino.agua || 0),
-        metodoSelecionado
-      );
-      mensagemMetodo.textContent = "Aguarde a confirmação de pagamento pelo administrador.";
-      btnConfirmarMetodo.disabled = true;
-      carregarDados();
-    };
-  </script>
+  btnCopiarPix.onclick = () => {
+    navigator.clipboard.writeText(pixString);
+    alert("Código PIX copiado!");
+  };
+};
+
+// Selecionar Dinheiro
+btnDinheiroModal.onclick = () => {
+  metodoSelecionado = "Dinheiro";
+  btnDinheiroModal.disabled = true;
+  btnPixModal.style.display = "none";
+  pixContainer.style.display = "none";
+  btnConfirmarMetodo.disabled = false;
+  mensagemMetodo.textContent = "Você selecionou Dinheiro. Confirme para enviar solicitação.";
+};
+
+// Confirmar método
+btnConfirmarMetodo.onclick = async () => {
+  if (!metodoSelecionado) return;
+  const mes = new Date().toLocaleString("pt-BR", { month: "long", year: "numeric" });
+  await myDB.solicitarPagamento(cpfLogado, mes, valorTotal, metodoSelecionado);
+  mensagemMetodo.textContent = "Aguarde a confirmação de pagamento pelo administrador.";
+  btnConfirmarMetodo.disabled = true;
+  carregarHistorico();
+};
+</script>
+
 </body>
 </html>
