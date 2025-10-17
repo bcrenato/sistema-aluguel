@@ -94,18 +94,3 @@ const myDB = {
     return snap.val();
   }
 };
-
-// ============================================================
-// 🔐 VERIFICADOR DE SESSÃO (opcional)
-// ============================================================
-
-// Verifica se há usuário logado; se não houver, redireciona
-auth.onAuthStateChanged(user => {
-  const path = window.location.pathname;
-  const onLogin = path.endsWith("index.html") || path.endsWith("/");
-
-  if (!user && !onLogin) {
-    // Sem login → volta pra página inicial
-    window.location.href = "index.html";
-  }
-});
