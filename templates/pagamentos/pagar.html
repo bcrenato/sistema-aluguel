@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block page_title %}{% if current_user.tipo == 'proprietario' %}Registrar Pagamento{% else %}Realizar Pagamento{% endif %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-{% if current_user.tipo == 'proprietario' %}cash{% else %}credit-card{% endif %} me-2"></i>{% if current_user.tipo == 'proprietario' %}Registrar Pagamento{% else %}Realizar Pagamento{% endif %}</h5>
+                <a href="{{ url_for('listar_pagamentos') }}" class="btn btn-sm btn-outline-secondary">Voltar</a>
+            </div>
+            <div class="card-body">
+                <!-- Informações do Pagamento -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">Informações do Pagamento</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-2">
+                            <div class="col-md-6">
+                                <strong>Imóvel:</strong> {{ pagamento.contrato.imovel.titulo }}
+                            </div>
+                            <div class="col-md-6 text-md-end">
+                                <strong>Inquilino:</strong> {{ pagamento.contrato.locatario.nome }}
+                            </div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-4">
+                                <strong>Vencimento:</strong> {{ pagamento.data_vencimento.strftime('%d/%m/%Y') }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Valor Total:</strong> R$ {{ "%.2f"|format(pagamento.valor) }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Já Pago:</strong> R$ {{ "%.2f"|format(pagamento.valor_pago) }}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <strong>Saldo Devedor:</strong>
+                                <span class="text-danger fw-bold">R$ {{ "%.2f"|format(pagamento.valor - pagamento.valor_pago) }}</span>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Status:</strong>
+                                {% if pagamento.status == 'pago' %}
+                                <span class="badge bg-success">Pago</span>
+                                {% elif pagamento.status == 'atrasado' %}
+                                <span class="badge bg-danger">Atrasado</span>
+                                {% elif pagamento.status == 'parcial' %}
+                                <span class="badge bg-warning">Parcial</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Pendente</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Formulário de Pagamento -->
+                <form method="POST">
+                    <h6 class="mb-3">{% if current_user.tipo == 'proprietario' %}Registrar Recebimento{% else %}Informar Pagamento{% endif %}</h6>
+
+                    <div class="mb-3">
+                        <label for="valor_pago" class="form-label">Valor Pago *</label>
+                        <input type="number" class="form-control" id="valor_pago" name="valor_pago"
+                               min="0" max="{{ pagamento.valor - pagamento.valor_pago }}" step="0.01"
+                               value="{{ pagamento.valor - pagamento.valor_pago }}" required>
+                        <div class="form-text">Valor máximo: R$ {{ "%.2f"|format(pagamento.valor - pagamento.valor_pago) }}</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="forma_pagamento" class="form-label">Forma de Pagamento</label>
+                        <select class="form-select" id="forma_pagamento" name="forma_pagamento">
+                            <option value="">Selecione...</option>
+                            <option value="pix">PIX</option>
+                            <option value="boleto">Boleto</option>
+                            <option value="transferencia">Transferência</option>
+                            <option value="dinheiro">Dinheiro</option>
+                            <option value="outro">Outro</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="comprovante" class="form-label">Comprovante (URL)</label>
+                        <input type="url" class="form-control" id="comprovante" name="comprovante" placeholder="https://exemplo.com/comprovante.pdf">
+                        <div class="form-text">Link para o comprovante de pagamento (opcional)</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="observacoes" class="form-label">Observações</label>
+                        <textarea class="form-control" id="observacoes" name="observacoes" rows="2" placeholder="Observações sobre o pagamento..."></textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{{ url_for('listar_pagamentos') }}" class="btn btn-outline-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-1"></i>{% if current_user.tipo == 'proprietario' %}Registrar{% else %}Confirmar Pagamento{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

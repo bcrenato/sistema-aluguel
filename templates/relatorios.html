@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Relatórios{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Relatórios Gerenciais</h5>
+</div>
+
+<!-- Cards Resumo -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted mb-1">Recebido este Mês</h6>
+                        <h3 class="mb-0 text-success">R$ {{ "%.2f"|format(recebido_mes) }}</h3>
+                    </div>
+                    <i class="bi bi-cash-stack text-success display-4 opacity-25"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted mb-1">A Receber este Mês</h6>
+                        <h3 class="mb-0 text-warning">R$ {{ "%.2f"|format(a_receber_mes) }}</h3>
+                    </div>
+                    <i class="bi bi-clock text-warning display-4 opacity-25"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted mb-1">Imóveis Vagos</h6>
+                        <h3 class="mb-0">{{ imoveis_vagos }}</h3>
+                    </div>
+                    <i class="bi bi-house-door text-primary display-4 opacity-25"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card danger">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted mb-1">Inadimplentes</h6>
+                        <h3 class="mb-0 text-danger">{{ inadimplentes|length }}</h3>
+                    </div>
+                    <i class="bi bi-exclamation-triangle text-danger display-4 opacity-25"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Inadimplência -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-exclamation-triangle text-danger me-2"></i>Pagamentos em Atraso</h5>
+                {% if inadimplentes %}
+                <a href="{{ url_for('listar_pagamentos', status='atrasado') }}" class="btn btn-sm btn-outline-danger">Ver todos</a>
+                {% endif %}
+            </div>
+            <div class="card-body p-0">
+                {% if inadimplentes %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Inquilino</th>
+                                <th>Imóvel</th>
+                                <th class="text-center">Vencimento</th>
+                                <th class="text-end">Dias Atraso</th>
+                                <th class="text-end">Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pag in inadimplentes %}
+                            <tr>
+                                <td>{{ pag.contrato.locatario.nome }}</td>
+                                <td>{{ pag.contrato.imovel.titulo }}</td>
+                                <td class="text-center">{{ pag.data_vencimento.strftime('%d/%m/%Y') }}</td>
+                                <td class="text-end text-danger fw-bold">{{ (today - pag.data_vencimento).days if today else 0 }}</td>
+                                <td class="text-end">R$ {{ "%.2f"|format(pag.valor - pag.valor_pago) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-check-circle display-4 text-success"></i>
+                    <p class="mt-2">Nenhum pagamento em atraso!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Imóveis Disponíveis -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-house-door text-success me-2"></i>Imóveis Disponíveis ({{ imoveis_vagos }}/{{ total_imoveis }})</h5>
+                <a href="{{ url_for('listar_imoveis') }}" class="btn btn-sm btn-outline-primary">Gerenciar</a>
+            </div>
+            <div class="card-body p-0">
+                {% set imoveis_disponiveis = imoveis|selectattr('disponivel', 'equalto', true)|list if imoveis is defined else [] %}
+                {% if imoveis_disponiveis %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Imóvel</th>
+                                <th class="text-center">Tipo</th>
+                                <th class="text-end">Aluguel</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for imovel in imoveis_disponiveis[:10] %}
+                            <tr>
+                                <td>
+                                    <strong>{{ imovel.titulo }}</strong><br>
+                                    <small class="text-muted">{{ imovel.cidade }}/{{ imovel.estado }}</small>
+                                </td>
+                                <td class="text-center"><span class="badge bg-secondary">{{ imovel.tipo }}</span></td>
+                                <td class="text-end">R$ {{ "%.2f"|format(imovel.valor_aluguel) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-house-door display-4"></i>
+                    <p class="mt-2">Todos os imóveis estão alugados</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Resumo por Imóvel -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Resumo Financeiro por Imóvel</h5>
+    </div>
+    <div class="card-body p-0">
+        {% if imoveis %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Imóvel</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-end">Aluguel</th>
+                        <th class="text-end">Condomínio</th>
+                        <th class="text-end">IPTU</th>
+                        <th class="text-end">Total Mensal</th>
+                        <th class="text-center">Contrato</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for imovel in imoveis %}
+                    <tr>
+                        <td>
+                            <strong>{{ imovel.titulo }}</strong><br>
+                            <small class="text-muted">{{ imovel.endereco }}, {{ imovel.cidade }}/{{ imovel.estado }}</small>
+                        </td>
+                        <td class="text-center">
+                            {% if imovel.disponivel %}
+                            <span class="badge bg-success">Vago</span>
+                            {% else %}
+                            <span class="badge bg-warning">Alugado</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">R$ {{ "%.2f"|format(imovel.valor_aluguel) }}</td>
+                        <td class="text-end">R$ {{ "%.2f"|format(imovel.valor_condominio) }}</td>
+                        <td class="text-end">R$ {{ "%.2f"|format(imovel.valor_iptu) }}</td>
+                        <td class="text-end fw-bold">R$ {{ "%.2f"|format(imovel.valor_aluguel + imovel.valor_condominio + imovel.valor_iptu) }}</td>
+                        <td class="text-center">
+                            {% if not imovel.disponivel %}
+                            <span class="text-success"><i class="bi bi-check-circle"></i> Ativo</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="table-light fw-bold">
+                        <td>TOTAL</td>
+                        <td></td>
+                        <td class="text-end">R$ {{ "%.2f"|format(imoveis|sum(attribute='valor_aluguel')) }}</td>
+                        <td class="text-end">R$ {{ "%.2f"|format(imoveis|sum(attribute='valor_condominio')) }}</td>
+                        <td class="text-end">R$ {{ "%.2f"|format(imoveis|sum(attribute='valor_iptu')) }}</td>
+                        <td class="text-end">R$ {{ "%.2f"|format(imoveis|sum(attribute='valor_aluguel') + imoveis|sum(attribute='valor_condominio') + imoveis|sum(attribute='valor_iptu')) }}</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

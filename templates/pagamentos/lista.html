@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Pagamentos{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h5 class="mb-0"><i class="bi bi-cash-stack me-2"></i>Pagamentos</h5>
+    {% if current_user.tipo == 'proprietario' %}
+    <a href="{{ url_for('atualizar_status_pagamentos') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-clockwise me-1"></i> Atualizar Status
+    </a>
+    {% endif %}
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label for="status" class="form-label">Status</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">Todos</option>
+                    <option value="pendente" {% if request.args.get('status') == 'pendente' %}selected{% endif %}>Pendente</option>
+                    <option value="atrasado" {% if request.args.get('status') == 'atrasado' %}selected{% endif %}>Atrasado</option>
+                    <option value="pago" {% if request.args.get('status') == 'pago' %}selected{% endif %}>Pago</option>
+                    <option value="parcial" {% if request.args.get('status') == 'parcial' %}selected{% endif %}>Parcial</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="data_inicio" class="form-label">Data Início</label>
+                <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ request.args.get('data_inicio', '') }}">
+            </div>
+            <div class="col-md-3">
+                <label for="data_fim" class="form-label">Data Fim</label>
+                <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ request.args.get('data_fim', '') }}">
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if pagamentos %}
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Imóvel</th>
+                        <th>Inquilino</th>
+                        <th class="text-center">Vencimento</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-end">Valor</th>
+                        <th class="text-end">Pago</th>
+                        <th class="text-end">Saldo</th>
+                        <th class="text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pagamento in pagamentos %}
+                    <tr class="{{ 'table-danger' if pagamento.status == 'atrasado' else '' }}">
+                        <td>#{{ pagamento.id }}</td>
+                        <td>{{ pagamento.contrato.imovel.titulo }}</td>
+                        <td>{{ pagamento.contrato.locatario.nome }}</td>
+                        <td class="text-center">{{ pagamento.data_vencimento.strftime('%d/%m/%Y') }}</td>
+                        <td class="text-center">
+                            {% if pagamento.status == 'pago' %}
+                            <span class="badge bg-success">Pago</span>
+                            {% elif pagamento.status == 'atrasado' %}
+                            <span class="badge bg-danger">Atrasado</span>
+                            {% elif pagamento.status == 'parcial' %}
+                            <span class="badge bg-warning">Parcial</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Pendente</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">R$ {{ "%.2f"|format(pagamento.valor) }}</td>
+                        <td class="text-end">R$ {{ "%.2f"|format(pagamento.valor_pago) }}</td>
+                        <td class="text-end fw-bold {% if pagamento.valor > pagamento.valor_pago %}text-danger{% else %}text-success{% endif %}">
+                            R$ {{ "%.2f"|format(pagamento.valor - pagamento.valor_pago) }}
+                        </td>
+                        <td class="text-center">
+                            {% if pagamento.status != 'pago' %}
+                            <a href="{{ url_for('pagar_pagamento', id=pagamento.id) }}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-{% if current_user.tipo == 'proprietario' %}cash{% else %}credit-card{% endif %}"></i>
+                                {% if current_user.tipo == 'proprietario' %}Registrar{% else %}Pagar{% endif %}
+                            </a>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Resumo -->
+<div class="card mt-4">
+    <div class="card-body">
+        <h6 class="mb-3">Resumo</h6>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="text-center p-3 bg-light rounded">
+                    <h4 class="text-primary">{{ pagamentos|selectattr('status', 'equalto', 'pago')|list|length }}</h4>
+                    <small class="text-muted">Pagos</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center p-3 bg-light rounded">
+                    <h4 class="text-warning">{{ pagamentos|selectattr('status', 'equalto', 'pendente')|list|length }}</h4>
+                    <small class="text-muted">Pendentes</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center p-3 bg-light rounded">
+                    <h4 class="text-danger">{{ pagamentos|selectattr('status', 'equalto', 'atrasado')|list|length }}</h4>
+                    <small class="text-muted">Atrasados</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center p-3 bg-light rounded">
+                    <h4 class="text-info">{{ pagamentos|selectattr('status', 'equalto', 'parcial')|list|length }}</h4>
+                    <small class="text-muted">Parciais</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="bi bi-cash-stack display-1 text-muted"></i>
+        <h4 class="mt-3">Nenhum pagamento encontrado</h4>
+        <p class="text-muted">Não há pagamentos cadastrados com os filtros atuais.</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

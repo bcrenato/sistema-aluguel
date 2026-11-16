@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted mb-1">Meus Contratos</h6>
+                        <h3 class="mb-0">{{ contratos|length }}</h3>
+                    </div>
+                    <i class="bi bi-file-earmark-text text-primary display-4 opacity-25"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card stat-card warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted mb-1">Pagamentos Pendentes</h6>
+                        <h3 class="mb-0">{{ pagamentos_pendentes|length }}</h3>
+                    </div>
+                    <i class="bi bi-clock text-warning display-4 opacity-25"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card stat-card success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted mb-1">Total Mensal</h6>
+                        <h3 class="mb-0">
+                            R$ {{ "%.2f"|format(contratos|sum(attribute='valor_mensal')) }}
+                        </h3>
+                    </div>
+                    <i class="bi bi-cash text-success display-4 opacity-25"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pagamentos Pendentes -->
+{% if pagamentos_pendentes %}
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Pagamentos em Aberto</h5>
+        <a href="{{ url_for('listar_pagamentos') }}" class="btn btn-sm btn-outline-danger">Ver todos</a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Imóvel</th>
+                        <th class="text-center">Vencimento</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-end">Valor</th>
+                        <th class="text-center">Ação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pagamento in pagamentos_pendentes[:5] %}
+                    <tr>
+                        <td>{{ pagamento.contrato.imovel.titulo }}</td>
+                        <td class="text-center">{{ pagamento.data_vencimento.strftime('%d/%m/%Y') }}</td>
+                        <td class="text-center">
+                            {% if pagamento.status == 'atrasado' %}
+                            <span class="badge bg-danger">Atrasado</span>
+                            {% else %}
+                            <span class="badge bg-warning">Pendente</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">R$ {{ "%.2f"|format(pagamento.valor - pagamento.valor_pago) }}</td>
+                        <td class="text-center">
+                            <a href="{{ url_for('pagar_pagamento', id=pagamento.id) }}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-credit-card"></i> Pagar
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Meus Contratos -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>Meus Contratos</h5>
+    </div>
+    <div class="card-body p-0">
+        {% if contratos %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Imóvel</th>
+                        <th class="text-center">Período</th>
+                        <th class="text-center">Vencimento</th>
+                        <th class="text-end">Valor/Mês</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contrato in contratos %}
+                    <tr>
+                        <td>
+                            <strong>{{ contrato.imovel.titulo }}</strong><br>
+                            <small class="text-muted">{{ contrato.imovel.endereco }}, {{ contrato.imovel.cidade }}/{{ contrato.imovel.estado }}</small>
+                        </td>
+                        <td class="text-center">
+                            {{ contrato.data_inicio.strftime('%d/%m/%Y') }} a {{ contrato.data_fim.strftime('%d/%m/%Y') }}
+                        </td>
+                        <td class="text-center">Dia {{ contrato.dia_vencimento }}</td>
+                        <td class="text-end">R$ {{ "%.2f"|format(contrato.valor_mensal) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-file-earmark-text display-4"></i>
+            <p class="mt-2">Você não possui contratos ativos</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

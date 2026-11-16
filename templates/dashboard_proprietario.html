@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted mb-1">Total de Imóveis</h6>
+                        <h3 class="mb-0">{{ imoveis|length }}</h3>
+                    </div>
+                    <i class="bi bi-building text-primary display-4 opacity-25"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted mb-1">Contratos Ativos</h6>
+                        <h3 class="mb-0">{{ contratos|length }}</h3>
+                    </div>
+                    <i class="bi bi-file-earmark-text text-success display-4 opacity-25"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted mb-1">Pagamentos Pendentes</h6>
+                        <h3 class="mb-0">{{ pagamentos_pendentes }}</h3>
+                    </div>
+                    <i class="bi bi-clock text-warning display-4 opacity-25"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card danger">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted mb-1">A Receber este Mês</h6>
+                        <h3 class="mb-0">R$ {{ "%.2f"|format(total_receber) }}</h3>
+                    </div>
+                    <i class="bi bi-cash-stack text-danger display-4 opacity-25"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-lightning me-2"></i>Ações Rápidas</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{{ url_for('novo_imovel') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i> Novo Imóvel
+                    </a>
+                    <a href="{{ url_for('novo_contrato') }}" class="btn btn-success">
+                        <i class="bi bi-plus-circle me-1"></i> Novo Contrato
+                    </a>
+                    <a href="{{ url_for('listar_pagamentos') }}" class="btn btn-warning">
+                        <i class="bi bi-cash me-1"></i> Ver Pagamentos
+                    </a>
+                    <a href="{{ url_for('relatorios') }}" class="btn btn-info">
+                        <i class="bi bi-graph-up me-1"></i> Relatórios
+                    </a>
+                    <a href="{{ url_for('atualizar_status_pagamentos') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Atualizar Status
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Imóveis Recentes -->
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-building me-2"></i>Meus Imóveis</h5>
+                <a href="{{ url_for('listar_imoveis') }}" class="btn btn-sm btn-outline-primary">Ver todos</a>
+            </div>
+            <div class="card-body p-0">
+                {% if imoveis %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Imóvel</th>
+                                <th class="text-center">Tipo</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-end">Aluguel</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for imovel in imoveis[:5] %}
+                            <tr>
+                                <td>
+                                    <strong>{{ imovel.titulo }}</strong><br>
+                                    <small class="text-muted">{{ imovel.endereco }}, {{ imovel.cidade }}/{{ imovel.estado }}</small>
+                                </td>
+                                <td class="text-center"><span class="badge bg-secondary">{{ imovel.tipo }}</span></td>
+                                <td class="text-center">
+                                    {% if imovel.disponivel %}
+                                    <span class="badge bg-success">Disponível</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">Alugado</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">R$ {{ "%.2f"|format(imovel.valor_aluguel) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-building display-4"></i>
+                    <p class="mt-2">Nenhum imóvel cadastrado</p>
+                    <a href="{{ url_for('novo_imovel') }}" class="btn btn-primary btn-sm">Cadastrar primeiro imóvel</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Contratos Ativos -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>Contratos Ativos</h5>
+                <a href="{{ url_for('listar_contratos') }}" class="btn btn-sm btn-outline-primary">Ver todos</a>
+            </div>
+            <div class="card-body p-0">
+                {% if contratos %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Inquilino</th>
+                                <th class="text-center">Imóvel</th>
+                                <th class="text-center">Vencimento</th>
+                                <th class="text-end">Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for contrato in contratos[:5] %}
+                            <tr>
+                                <td>{{ contrato.locatario.nome }}</td>
+                                <td class="text-center">{{ contrato.imovel.titulo }}</td>
+                                <td class="text-center">{{ contrato.data_fim.strftime('%d/%m/%Y') }}</td>
+                                <td class="text-end">R$ {{ "%.2f"|format(contrato.valor_mensal) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-file-earmark-text display-4"></i>
+                    <p class="mt-2">Nenhum contrato ativo</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

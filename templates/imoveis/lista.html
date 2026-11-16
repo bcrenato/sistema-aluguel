@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Meus Imóveis{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h5 class="mb-0"><i class="bi bi-building me-2"></i>Meus Imóveis</h5>
+    <a href="{{ url_for('novo_imovel') }}" class="btn btn-primary">
+        <i class="bi bi-plus me-1"></i> Novo Imóvel
+    </a>
+</div>
+
+{% if imoveis %}
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Imóvel</th>
+                        <th>Endereço</th>
+                        <th class="text-center">Tipo</th>
+                        <th class="text-center">Quartos</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-end">Aluguel</th>
+                        <th class="text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for imovel in imoveis %}
+                    <tr>
+                        <td>
+                            <strong>{{ imovel.titulo }}</strong><br>
+                            <small class="text-muted">{{ imovel.descricao[:80] if imovel.descricao else 'Sem descrição' }}...</small>
+                        </td>
+                        <td>{{ imovel.endereco }}, {{ imovel.cidade }}/{{ imovel.estado }}</td>
+                        <td class="text-center"><span class="badge bg-secondary">{{ imovel.tipo }}</span></td>
+                        <td class="text-center">{{ imovel.quartos }}</td>
+                        <td class="text-center">
+                            {% if imovel.disponivel %}
+                            <span class="badge bg-success">Disponível</span>
+                            {% else %}
+                            <span class="badge bg-warning">Alugado</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">R$ {{ "%.2f"|format(imovel.valor_aluguel) }}</td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('editar_imovel', id=imovel.id) }}" class="btn btn-outline-primary" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form method="POST" action="{{ url_for('excluir_imovel', id=imovel.id) }}" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir este imóvel?')">
+                                    <button type="submit" class="btn btn-outline-danger" title="Excluir">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="bi bi-building display-1 text-muted"></i>
+        <h4 class="mt-3">Nenhum imóvel cadastrado</h4>
+        <p class="text-muted">Comece cadastrando seu primeiro imóvel para aluguel.</p>
+        <a href="{{ url_for('novo_imovel') }}" class="btn btn-primary mt-2">
+            <i class="bi bi-plus me-1"></i> Cadastrar Imóvel
+        </a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
